@@ -4,6 +4,7 @@ library(dplyr)
 library(purrr)
 library(parallel)
 library(rgeos)
+library(feather)
 
 #Load Spalding's marine Ecoregions of the world
 #install_github("jebyrnes/meowR")
@@ -35,6 +36,10 @@ for(i in 1:length(checklists_by_region)){
   checklists_by_region[[i]]$ecoregion <- americas_regions@data$ECOREGION[i]
 }
 
+####### Save the resulting data for later post-processing
 checklists_by_region <- bind_rows(checklists_by_region)
+
 save(checklists_by_region, file="../data/checklists_by_region.Rdata")
+write.csv(checklists_by_region, file="../data/checklists.csv")
+write_feather(checklists_by_region, path="../data/checklists.feather")
 
