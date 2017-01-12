@@ -24,17 +24,21 @@ americas_regions <- subset(regions, regions$ECO_CODE_X %in% americas)
 
 
 #multicore, 'cause we have 20 of these to process, and each takes time
-checklists_by_region <- mclapply(1:length(americas_regions@data$ECOREGION), 
-              function(x) checklist(geometry = writeWKT(americas_regions[x,])),
-              mc.cores=10)
-
-names(checklists_by_region) <- as.character(americas_regions@data$ECOREGION)
-
-#checklists_by_region <- q
-
-for(i in 1:length(checklists_by_region)){
-  checklists_by_region[[i]]$ecoregion <- americas_regions@data$ECOREGION[i]
-}
+checklists_by_region <- mclapply(1:2,#length(americas_regions@data$ECOREGION), 
+                                 function(x) {
+                                   #So we can follow progress
+                                   cat(paste(x, "of", length(americas_regions@data$ECOREGION), "\n", sep=" "))
+                                   #get the data from OBIS
+                                   ret <- checklist(geometry = writeWKT(americas_regions[x,]))
+                                   
+                                   #ad the ecoregion
+                                   ret$ecoregion <- as.character(americas_regions@data$ECOREGION[x])
+                                   
+                                   #write out a temporary file in case this job gets paused we can restart
+                                   write.csv(ret, file = paste0("../data/checklists/", ret$ecoregion[1], ".csv"))
+                                   ret
+                                 },
+                                 mc.cores=3)
 
 ####### Save the resulting data for later post-processing
 checklists_by_region <- bind_rows(checklists_by_region)
