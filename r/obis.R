@@ -25,21 +25,26 @@ americas_regions <- subset(regions, regions$ECO_CODE_X %in% americas)
 
 #multicore, 'cause we have 20 of these to process, and each takes time
 checklists_by_region <- mclapply(1:length(americas_regions@data$ECOREGION), 
-              function(x) checklist(geometry = writeWKT(americas_regions[x,])),
-              mc.cores=10)
-
-names(checklists_by_region) <- as.character(americas_regions@data$ECOREGION)
-
-#checklists_by_region <- q
-
-for(i in 1:length(checklists_by_region)){
-  checklists_by_region[[i]]$ecoregion <- americas_regions@data$ECOREGION[i]
-}
+                                 function(x) {
+                                   #So we can follow progress
+                                   print(paste(x, "of", length(americas_regions@data$ECOREGION), sep=" "))
+                                   #get the data from OBIS
+                                   ret <- checklist(geometry = writeWKT(americas_regions[x,]))
+                                   
+                                   #ad the ecoregion
+                                   ret$ecoregion <- as.character(americas_regions@data$ECOREGION[x])
+                                   
+                                   #write out a temporary file in case this job gets paused we can restart
+                                   write.csv(ret, file = paste0("../data/checklists/", ret$ecoregion[1], ".csv"))
+                                   ret
+                                 },
+                                 mc.cores=10)
 
 ####### Save the resulting data for later post-processing
-checklists_by_region <- bind_rows(checklists_by_region)
+checklists_by_region_df <- bind_rows(checklists_by_region)
 
-save(checklists_by_region, file="../data/checklists_by_region.Rdata")
-write.csv(checklists_by_region, file="../data/checklists.csv")
-write_feather(checklists_by_region, path="../data/checklists.feather")
+#trying a few formats to see which is the smallest
+save(checklists_by_region_df, file="../data/checklists_by_region.Rdata")
+write.csv(checklists_by_region_df, file="../data/checklists.csv")
+write_feather(checklists_by_region_df, path="../data/checklists.feather")
 
