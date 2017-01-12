@@ -16,6 +16,10 @@ americas <- c(53:58, 5:14, 37:43, 59:61, 62:77, 152, 163:188)
 
 americas_regions <- subset(regions, regions$ECO_CODE_X %in% americas)
 
+#If we've done some already
+done <- gsub("\\.csv", "", list.files("../data/checklists"))
+americas_regions <- subset(americas_regions, !(americas_regions@data$ECOREGION %in% done))
+americas_regions@data$ECOREGION  
 #plot(americas_regions)
 
 
@@ -38,7 +42,7 @@ checklists_by_region <- mclapply(1:length(americas_regions@data$ECOREGION),
                                    write.csv(ret, file = paste0("../data/checklists/", ret$ecoregion[1], ".csv"))
                                    ret
                                  },
-                                 mc.cores=10)
+                                 mc.cores=7)
 
 ####### Save the resulting data for later post-processing
 checklists_by_region_df <- bind_rows(checklists_by_region)
